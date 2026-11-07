@@ -1,0 +1,326 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Floating Data Objects</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #101827;
+    color: white;
+    overflow: hidden;
+}
+
+header {
+    height: 70px;
+    background: #172438;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 25px;
+}
+
+header h2 {
+    margin: 0;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.add-btn {
+    background: #00b894;
+    color: white;
+}
+
+/* Floating workspace */
+
+.workspace {
+    height: calc(100vh - 70px);
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Floating objects */
+
+.object {
+    position: absolute;
+    width: 220px;
+    min-height: 140px;
+    padding: 18px;
+    border-radius: 12px;
+    color: white;
+    cursor: grab;
+    animation: float 4s ease-in-out infinite;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.object:active {
+    cursor: grabbing;
+}
+
+.object h3 {
+    margin-top: 0;
+}
+
+.object p {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.object input,
+.object textarea {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 8px;
+    border: none;
+    border-radius: 4px;
+}
+
+.object textarea {
+    resize: vertical;
+}
+
+.object button {
+    margin-top: 5px;
+    font-size: 12px;
+}
+
+.edit-btn {
+    background: white;
+    color: #222;
+}
+
+.delete-btn {
+    background: #c0392b;
+    color: white;
+}
+
+/* Floating animation */
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-12px);
+    }
+}
+
+.blue { background: #2471a3; }
+.green { background: #148f77; }
+.purple { background: #76448a; }
+.orange { background: #ca6f1e; }
+
+</style>
+</head>
+
+<body>
+
+<header>
+
+    <h2>Floating Data Objects</h2>
+
+    <button class="add-btn" onclick="addObject()">
+        + Add Object
+    </button>
+
+</header>
+
+<div class="workspace" id="workspace">
+
+    <div class="object blue" style="top: 70px; left: 80px;">
+
+        <h3>Respondent 01</h3>
+
+        <p>Name: John</p>
+        <p>Status: Active</p>
+        <p>Response: Completed</p>
+
+        <button class="edit-btn" onclick="editObject(this)">
+            Edit
+        </button>
+
+        <button class="delete-btn" onclick="deleteObject(this)">
+            Delete
+        </button>
+
+    </div>
+
+
+    <div class="object green" style="top: 250px; left: 350px;">
+
+        <h3>Statistics</h3>
+
+        <p>Total respondents: 120</p>
+        <p>Completed: 85</p>
+        <p>Pending: 35</p>
+
+        <button class="edit-btn" onclick="editObject(this)">
+            Edit
+        </button>
+
+        <button class="delete-btn" onclick="deleteObject(this)">
+            Delete
+        </button>
+
+    </div>
+
+
+    <div class="object purple" style="top: 100px; left: 650px;">
+
+        <h3>Information</h3>
+
+        <p>Project: Data Collection</p>
+        <p>Department: Research</p>
+
+        <button class="edit-btn" onclick="editObject(this)">
+            Edit
+        </button>
+
+        <button class="delete-btn" onclick="deleteObject(this)">
+            Delete
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+// Add a new object
+
+function addObject() {
+
+    let object = document.createElement("div");
+
+    object.className = "object orange";
+
+    object.style.top = "150px";
+    object.style.left = "150px";
+
+    object.innerHTML = `
+        <h3>New Object</h3>
+
+        <p>Enter your information here.</p>
+
+        <button class="edit-btn" onclick="editObject(this)">
+            Edit
+        </button>
+
+        <button class="delete-btn" onclick="deleteObject(this)">
+            Delete
+        </button>
+    `;
+
+    document.getElementById("workspace").appendChild(object);
+
+}
+
+
+// Edit object information
+
+function editObject(button) {
+
+    let object = button.parentElement;
+
+    let title = prompt(
+        "Enter object title:",
+        object.querySelector("h3").textContent
+    );
+
+    if (title === null) return;
+
+    let information = prompt(
+        "Enter object information:",
+        Array.from(object.querySelectorAll("p"))
+            .map(p => p.textContent).join("\n")
+    );
+
+    if (information === null) return;
+
+    object.querySelector("h3").textContent = title;
+
+    object.querySelectorAll("p").forEach(p => p.remove());
+
+    information.split("\n").forEach(line => {
+
+        let paragraph = document.createElement("p");
+
+        paragraph.textContent = line;
+
+        object.insertBefore(paragraph, object.querySelector("button"));
+
+    });
+
+}
+
+
+// Delete object
+
+function deleteObject(button) {
+
+    if (confirm("Delete this object?")) {
+        button.parentElement.remove();
+    }
+
+}
+
+
+// Drag objects around the workspace
+
+document.addEventListener("mousedown", function(e) {
+
+    let object = e.target.closest(".object");
+
+    if (!object || e.target.tagName === "BUTTON") return;
+
+    let offsetX = e.clientX - object.offsetLeft;
+    let offsetY = e.clientY - object.offsetTop;
+
+    function move(e) {
+
+        object.style.left = (e.clientX - offsetX) + "px";
+        object.style.top = (e.clientY - offsetY - 70) + "px";
+
+    }
+
+    function stop() {
+
+        document.removeEventListener("mousemove", move);
+        document.removeEventListener("mouseup", stop);
+
+    }
+
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", stop);
+
+});
+
+</script>
+
+</body>
+
+
+
+<footer> Keep us updated!</footer>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QForm</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+        }
+
+        h1 {
+            text-align: center;
+            color: green;
+        }
+
+        .question {
+            margin: 25px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .question p {
+            font-weight: bold;
+        }
+
+        label {
+            display: block;
+            margin: 12px 0;
+        }
+
+        input[type="text"],
+        input[type="email"] {
+            width: 95%;
+            padding: 10px;
+            margin-top: 8px;
+        }
+
+        button {
+            background: green;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: darkgreen;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Questionnaire</h1>
+
+    <!-- CHANGE THE WEBSITE URL BELOW -->
+    <form action="https://example.com/submit"
+          method="POST">
+
+        <h3>Respondent Details</h3>
+
+        <label>
+            Full Name:
+            <input type="text" name="full_name"
+                   placeholder="Enter your name">
+        </label>
+
+        <label>
+            Email Address:
+            <input type="email" name="email"
+                   placeholder="Enter your email">
+        </label>
+
+
+        <!-- QUESTION 1: EDIT THIS SECTION -->
+        <div class="question">
+
+            <p>1. Which programming languages do you know?</p>
+
+            <label>
+                <input type="checkbox" name="languages"
+                       value="Python">
+                Python
+            </label>
+
+            <label>
+                <input type="checkbox" name="languages"
+                       value="HTML">
+                HTML
+            </label>
+
+            <label>
+                <input type="checkbox" name="languages"
+                       value="JavaScript">
+                JavaScript
+            </label>
+
+            <label>
+                <input type="checkbox" name="languages"
+                       value="Java">
+                Java
+            </label>
+
+        </div>
+
+
+        <!-- QUESTION 2: EDIT THIS SECTION -->
+        <div class="question">
+
+            <p>2. Which devices do you use?</p>
+
+            <label>
+                <input type="checkbox" name="devices"
+                       value="Laptop">
+                Laptop
+            </label>
+
+            <label>
+                <input type="checkbox" name="devices"
+                       value="Smartphone">
+                Smartphone
+            </label>
+
+            <label>
+                <input type="checkbox" name="devices"
+                       value="Tablet">
+                Tablet
+            </label>
+
+            <label>
+                <input type="checkbox" name="devices"
+                       value="Desktop">
+                Desktop computer
+            </label>
+
+        </div>
+
+
+        <!-- QUESTION 3: EDIT THIS SECTION -->
+        <div class="question">
+
+            <p>3. How do you access the internet?</p>
+
+            <label>
+                <input type="checkbox" name="internet"
+                       value="WiFi">
+                Wi-Fi
+            </label>
+
+            <label>
+                <input type="checkbox" name="internet"
+                       value="Mobile Data">
+                Mobile data
+            </label>
+
+            <label>
+                <input type="checkbox" name="internet"
+                       value="Ethernet">
+                Ethernet cable
+            </label>
+
+            <label>
+                <input type="checkbox" name="internet"
+                       value="Other">
+                Other
+            </label>
+
+        </div>
+
+
+        <button type="submit">Submit Answers</button>
+
+    </form>
+
+</div>
+
+</body>
+</html>

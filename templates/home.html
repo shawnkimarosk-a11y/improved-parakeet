@@ -1,0 +1,112 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Home Page</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+        }
+
+        /* Main page layout */
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Left side: main content */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+        }
+
+        .main-content h1 {
+            margin-bottom: 15px;
+        }
+
+        /* Right side panel */
+        .right-panel {
+            width: 280px;
+            padding: 30px 20px;
+            border-left: 1px solid #333;
+            background: #000;
+        }
+
+        .right-panel h2 {
+            margin-bottom: 25px;
+            font-size: 20px;
+        }
+
+        .panel-link {
+            display: block;
+            padding: 14px 12px;
+            margin-bottom: 10px;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .panel-link:hover {
+            background: #222;
+        }
+
+        /* Small screens */
+        @media (max-width: 600px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .right-panel {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid #333;
+            }
+
+            .main-content {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- Main content on the left -->
+        <main class="main-content">
+            <h1>Welcome Home!</h1>
+            <p>You have logged in successfully.</p>
+        </main>
+
+        <!-- Separated panel on the right -->
+        <aside class="right-panel">
+            <h2>Dashboard</h2>
+
+            <a href="/home" class="panel-link">Home</a>
+            <a href="#" class="panel-link">Profile</a>
+             <a href="#" class="panel-link">Settings</a>
+            <a href="/driver.html" class="panel-link"> pick driver</a>
+             <a href="/chat.with.dev" class="panel-link">chat with developer</a>
+            <a href="/" class="panel-link">Logout</a>
+            
+        </aside>
+
+    </div>
+
+</body>
+</html>

@@ -77,10 +77,19 @@ button:hover {
     min-width: 230px;
 }
 
+/* RESPONDENT GRID */
+
+.respondents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+    align-items: start;
+    margin-top: 20px;
+}
+
 /* FLOATING OBJECTS */
 
 .object {
-    position: absolute;
     width: 260px;
     min-height: 150px;
     padding: 18px;
@@ -107,6 +116,39 @@ button:hover {
     overflow-wrap: anywhere;
 }
 
+/* CUSTOM FLOATING OBJECTS */
+
+.custom-object {
+    position: absolute;
+    z-index: 10;
+}
+
+/* RESPONDENT CARDS */
+
+.respondent {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 150px;
+    border: 1px solid rgba(255,255,255,0.15);
+    cursor: grab;
+}
+
+.respondent small {
+    display: block;
+    margin-top: 12px;
+    opacity: 0.8;
+}
+
+.respondent h3 {
+    overflow-wrap: anywhere;
+}
+
+.answer {
+    overflow-wrap: anywhere;
+}
+
 /* OBJECT COLOURS */
 
 .blue {
@@ -125,6 +167,58 @@ button:hover {
     background: #ca6f1e;
 }
 
+/* PHOTOGRAPHS */
+
+.photo-section {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.3);
+}
+
+.photo-section h4 {
+    margin: 5px 0 15px;
+}
+
+.photo-card {
+    margin-bottom: 18px;
+    background: rgba(0,0,0,0.15);
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.photo-card p {
+    font-weight: bold;
+    margin: 5px 0 10px;
+}
+
+.photo-card img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    background: #101827;
+    border-radius: 6px;
+    display: block;
+}
+
+.additional-photos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.additional-photos img {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 6px;
+    background: #101827;
+}
+
+.no-photo {
+    color: #d1d5db;
+    font-size: 13px;
+}
+
 /* BUTTONS */
 
 .edit-btn {
@@ -140,22 +234,6 @@ button:hover {
 .object button {
     margin-top: 8px;
     font-size: 12px;
-}
-
-/* DATABASE RECORDS */
-
-.respondent {
-    border: 1px solid rgba(255,255,255,0.15);
-}
-
-.respondent small {
-    display: block;
-    margin-top: 12px;
-    opacity: 0.8;
-}
-
-.answer {
-    overflow-wrap: anywhere;
 }
 
 /* EMPTY DATABASE */
@@ -180,6 +258,10 @@ button:hover {
         font-size: 17px;
     }
 
+    .respondents-grid {
+        grid-template-columns: 1fr;
+    }
+
     .object {
         width: min(260px, calc(100vw - 40px));
     }
@@ -194,6 +276,10 @@ button:hover {
 <header>
 
     <h2>Driver Information Dashboard</h2>
+
+    <button class="add-btn" onclick="addObject()">
+        + Add Object
+    </button>
 
 </header>
 
@@ -220,11 +306,11 @@ button:hover {
 
     {% if respondents %}
 
+    <div class="respondents-grid">
+
         {% for respondent in respondents %}
 
-        <div class="object blue respondent"
-             style="top: {{ 150 + (loop.index0 // 3) * 280 }}px;
-                    left: {{ 25 + (loop.index0 % 3) * 290 }}px;">
+        <div class="object blue respondent">
 
             <small>DATABASE RESPONDENT</small>
 
@@ -240,29 +326,133 @@ button:hover {
                 {{ respondent.email or "Not provided" }}
             </p>
 
-            <p>
-                <strong>Driving styles:</strong>
-            </p>
+            <p><strong>Driving styles:</strong></p>
 
             <p class="answer">
                 {{ respondent.driving_styles or "Not provided" }}
             </p>
 
-            <p>
-                <strong>Driving preferences:</strong>
-            </p>
+            <p><strong>Driving preferences:</strong></p>
 
             <p class="answer">
                 {{ respondent.driving_preferences or "Not provided" }}
             </p>
 
-            <p>
-                <strong>Passenger preferences:</strong>
-            </p>
+            <p><strong>Passenger preferences:</strong></p>
 
             <p class="answer">
                 {{ respondent.passenger_preferences or "Not provided" }}
             </p>
+
+
+            <!-- PHOTOGRAPHS -->
+
+            <div class="photo-section">
+
+                <h4>Driver Photographs</h4>
+
+                {% if respondent.profile_photo %}
+
+                <div class="photo-card">
+
+                    <p>Profile Photograph</p>
+
+                    <img
+                        src="{{ url_for('static', filename=respondent.profile_photo) }}"
+                        alt="Driver Profile"
+                        loading="lazy"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                    >
+
+                    <p class="no-photo" style="display:none;">
+                        Photograph unavailable.
+                    </p>
+
+                </div>
+
+                {% endif %}
+
+
+                {% if respondent.license_photo %}
+
+                <div class="photo-card">
+
+                    <p>Driving Licence Photograph</p>
+
+                    <img
+                        src="{{ url_for('static', filename=respondent.license_photo) }}"
+                        alt="Driving Licence"
+                        loading="lazy"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                    >
+
+                    <p class="no-photo" style="display:none;">
+                        Photograph unavailable.
+                    </p>
+
+                </div>
+
+                {% endif %}
+
+
+                {% if respondent.vehicle_photo %}
+
+                <div class="photo-card">
+
+                    <p>Vehicle Photograph</p>
+
+                    <img
+                        src="{{ url_for('static', filename=respondent.vehicle_photo) }}"
+                        alt="Driver Vehicle"
+                        loading="lazy"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                    >
+
+                    <p class="no-photo" style="display:none;">
+                        Photograph unavailable.
+                    </p>
+
+                </div>
+
+                {% endif %}
+
+
+                <!-- ADDITIONAL PHOTOGRAPHS -->
+
+                {% if respondent.additional_photos %}
+
+                <p><strong>Additional Photographs</strong></p>
+
+                <div class="additional-photos">
+
+                    {% for photo in respondent.additional_photos %}
+
+                    <img
+                        src="{{ url_for('static', filename=photo) }}"
+                        alt="Additional Driver Photograph"
+                        loading="lazy"
+                        onerror="this.style.display='none';"
+                    >
+
+                    {% endfor %}
+
+                </div>
+
+                {% endif %}
+
+
+                {% if not respondent.profile_photo
+                      and not respondent.license_photo
+                      and not respondent.vehicle_photo
+                      and not respondent.additional_photos %}
+
+                    <p class="no-photo">
+                        No photographs submitted.
+                    </p>
+
+                {% endif %}
+
+            </div>
 
             <small>Submitted respondent information</small>
 
@@ -270,18 +460,20 @@ button:hover {
 
         {% endfor %}
 
+    </div>
+
     {% else %}
 
-        <div class="empty-message">
+    <div class="empty-message">
 
-            <h3>No respondents yet</h3>
+        <h3>No respondents yet</h3>
 
-            <p>
-                When someone submits a reponse,
-                their information will appear here.
-            </p>
+        <p>
+            When someone submits a response,
+            their information will appear here.
+        </p>
 
-        </div>
+    </div>
 
     {% endif %}
 
@@ -290,11 +482,18 @@ button:hover {
 
 <script>
 
+/* WORKSPACE */
+
+const workspace = document.getElementById("workspace");
+
+let draggedObject = null;
+let offsetX = 0;
+let offsetY = 0;
+
+
 /* ADD CUSTOM OBJECT */
 
 function addObject() {
-
-    const workspace = document.getElementById("workspace");
 
     const object = document.createElement("div");
 
@@ -383,12 +582,6 @@ function deleteObject(button) {
 
 /* DRAG OBJECTS */
 
-const workspace = document.getElementById("workspace");
-
-let draggedObject = null;
-let offsetX = 0;
-let offsetY = 0;
-
 workspace.addEventListener("pointerdown", function(event) {
 
     const object = event.target.closest(".object");
@@ -400,6 +593,23 @@ workspace.addEventListener("pointerdown", function(event) {
     draggedObject = object;
 
     const rect = object.getBoundingClientRect();
+    const workspaceRect = workspace.getBoundingClientRect();
+
+    // Convert grid cards into floating objects when dragged.
+
+    if (object.classList.contains("respondent")) {
+
+        object.style.position = "absolute";
+
+        object.style.left =
+            (rect.left - workspaceRect.left + workspace.scrollLeft) + "px";
+
+        object.style.top =
+            (rect.top - workspaceRect.top + workspace.scrollTop) + "px";
+
+        object.style.width = "260px";
+
+    }
 
     offsetX = event.clientX - rect.left;
     offsetY = event.clientY - rect.top;
@@ -441,3 +651,4 @@ workspace.addEventListener("pointercancel", function() {
 
 </body>
 </html>
+

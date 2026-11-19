@@ -9,9 +9,11 @@ from flask import (
     render_template,
     request,
     redirect,
-    url_for
+    url_for,
+    jsonify
 )
 
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
 
@@ -41,7 +43,19 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 # ==========================================
-# 2. LOGIN DETAILS
+# 2. CORS CONFIGURATION
+# ==========================================
+
+# Allows external questionnaires to submit
+# information to the Flask application.
+
+CORS(app, resources={
+    r"/receive": {"origins": "*"}
+})
+
+
+# ==========================================
+# 3. LOGIN DETAILS
 # ==========================================
 
 USERNAME = os.environ.get("APP_USERNAME", "admin")
@@ -49,7 +63,7 @@ PASSWORD = os.environ.get("APP_PASSWORD", "1234")
 
 
 # ==========================================
-# 3. DATABASE CONNECTION
+# 4. DATABASE CONNECTION
 # ==========================================
 
 def get_db():
@@ -62,7 +76,7 @@ def get_db():
 
 
 # ==========================================
-# 4. DATABASE INITIALIZATION
+# 5. DATABASE INITIALIZATION
 # ==========================================
 
 def create_database():
@@ -84,7 +98,9 @@ def create_database():
             profile_photo TEXT,
             license_photo TEXT,
             vehicle_photo TEXT,
-            additional_photos TEXT
+            additional_photos TEXT,
+
+            preferred_route TEXT
 
         )
     """)
@@ -98,13 +114,14 @@ def create_database():
         ).fetchall()
     }
 
-    # Add missing photograph columns to older databases.
+    # Add missing columns to older databases.
 
     new_columns = {
         "profile_photo": "TEXT",
         "license_photo": "TEXT",
         "vehicle_photo": "TEXT",
-        "additional_photos": "TEXT"
+        "additional_photos": "TEXT",
+        "preferred_route": "TEXT"
     }
 
     for column, data_type in new_columns.items():
@@ -120,7 +137,7 @@ def create_database():
 
 
 # ==========================================
-# 5. PHOTOGRAPH HANDLING
+# 6. PHOTOGRAPH HANDLING
 # ==========================================
 
 def allowed_file(filename):
@@ -156,13 +173,11 @@ def save_photo(file):
 
     file.save(file_path)
 
-    # Save the relative path in the database.
-
     return f"uploads/{unique_name}"
 
 
 # ==========================================
-# 6. LOGIN PAGE
+# 7. LOGIN PAGE
 # ==========================================
 
 @app.route("/", methods=["GET", "POST"])
@@ -188,7 +203,7 @@ def login():
 
 
 # ==========================================
-# 7. HOME PAGE
+# 8. HOME PAGE
 # ==========================================
 
 @app.route("/home")
@@ -198,7 +213,7 @@ def home():
 
 
 # ==========================================
-# 8. SETTINGS PAGE
+# 9. SETTINGS PAGE
 # ==========================================
 
 @app.route("/settings")
@@ -209,7 +224,7 @@ def settings():
 
 
 # ==========================================
-# 9. DRIVER DASHBOARD
+# 10. DRIVER DASHBOARD
 # ==========================================
 
 @app.route("/driver")
@@ -238,7 +253,7 @@ def driver():
     ]
 
     # Convert additional photographs from JSON
-    # strings into Python lists for driver.html.
+    # strings into Python lists.
 
     for respondent in respondents:
 
@@ -264,7 +279,7 @@ def driver():
 
 
 # ==========================================
-# 10. EXTERNAL QUESTIONNAIRE ENDPOINT
+# 11. EXTERNAL QUESTIONNAIRE ENDPOINT
 # ==========================================
 
 @app.route("/receive", methods=["GET", "POST"])
@@ -294,7 +309,10 @@ def receive():
 
     if not full_name or not email:
 
-        return "Full name and email are required.", 400
+        return jsonify({
+            "success": False,
+            "message": "Full name and email are required."
+        }), 400
 
     # --------------------------------------
     # QUESTIONNAIRE ANSWERS
@@ -304,7 +322,21 @@ def receive():
 
     driving_preferences = request.form.getlist("loves")
 
-    passenger_preferences = request.form.getlist("passengers")
+    # Accept the external questionnaire field name.
+
+    passenger_preferences = request.form.getlist("kind")
+
+    # Also support the original field name.
+
+    if not passenger_preferences:
+
+        passenger_preferences = request.form.getlist(
+            "passengers"
+        )
+
+    preferred_route = request.form.get(
+        "route", ""
+    ).strip()
 
     # --------------------------------------
     # PHOTOGRAPH UPLOADS
@@ -354,6 +386,8 @@ def receive():
                 driving_preferences,
                 passenger_preferences,
 
+                preferred_route,
+
                 profile_photo,
                 license_photo,
                 vehicle_photo,
@@ -361,7 +395,7 @@ def receive():
 
             )
 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
         """, (
 
@@ -372,6 +406,8 @@ def receive():
             ", ".join(driving_preferences),
             ", ".join(passenger_preferences),
 
+            preferred_route,
+
             profile_photo,
             license_photo,
             vehicle_photo,
@@ -381,21 +417,31 @@ def receive():
 
         conn.commit()
 
+    except sqlite3.Error:
+
+        conn.rollback()
+
+        return jsonify({
+            "success": False,
+            "message": "Database error. Submission could not be saved."
+        }), 500
+
     finally:
 
         conn.close()
 
     # --------------------------------------
-    # REDIRECT TO DRIVER DASHBOARD
+    # RETURN SUCCESS WITHOUT REDIRECTING
     # --------------------------------------
 
-    return redirect(
-        url_for("driver")
-    )
+    return jsonify({
+        "success": True,
+        "message": "Your form has been submitted successfully!"
+    }), 200
 
 
 # ==========================================
-# 11. ERROR HANDLING
+# 12. ERROR HANDLING
 # ==========================================
 
 @app.errorhandler(413)
@@ -408,7 +454,7 @@ def file_too_large(error):
 
 
 # ==========================================
-# 12. START APPLICATION
+# 13. START APPLICATION
 # ==========================================
 
 create_database()

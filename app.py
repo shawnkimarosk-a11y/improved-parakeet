@@ -1,517 +1,633 @@
 
 
-import os
-import json
-import sqlite3
-import uuid
+<!DOCTYPE html>
+<html lang="en">
 
-from flask import (
-    Flask,
-    render_template,
-    request,
-    redirect,
-    url_for,
-    jsonify
-)
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-from flask_cors import CORS
-from werkzeug.utils import secure_filename
+<title>Driver Information Dashboard</title>
 
+<style>
 
-app = Flask(__name__)
-
-
-# ==========================================
-# 1. APPLICATION CONFIGURATION
-# ==========================================
-
-DATABASE = os.path.abspath(
-    os.environ.get(
-        "DATABASE_PATH",
-        "responses.db"
-    )
-)
-
-UPLOAD_FOLDER = os.path.join(
-    app.static_folder,
-    "uploads"
-)
-
-ALLOWED_EXTENSIONS = {
-    "png", "jpg", "jpeg", "gif", "webp"
+* {
+    box-sizing: border-box;
 }
 
-app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #101827;
+    color: white;
+}
 
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+/* HEADER */
 
+header {
+    min-height: 70px;
+    background: #172438;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 25px;
+    gap: 15px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
 
-# ==========================================
-# 2. CORS CONFIGURATION
-# ==========================================
+header h2 {
+    margin: 0;
+    font-size: 21px;
+}
 
-CORS(app, resources={
-    r"/receive": {"origins": "*"}
-})
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
 
+button:hover {
+    opacity: 0.85;
+}
 
-# ==========================================
-# 3. LOGIN DETAILS
-# ==========================================
+.add-btn {
+    background: #00b894;
+    color: white;
+}
 
-USERNAME = os.environ.get(
-    "APP_USERNAME",
-    "admin"
-)
+/* WORKSPACE */
 
-PASSWORD = os.environ.get(
-    "APP_PASSWORD",
-    "1234"
-)
+.workspace {
+    min-height: calc(100vh - 70px);
+    width: 100%;
+    position: relative;
+    overflow: auto;
+    padding: 20px;
+}
 
+/* STATISTICS */
 
-# ==========================================
-# 4. DATABASE CONNECTION
-# ==========================================
+.statistics {
+    background: #172438;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    width: fit-content;
+    min-width: 230px;
+}
 
-def get_db():
+/* RESPONDENT GRID */
 
-    conn = sqlite3.connect(DATABASE)
+.respondents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+    align-items: start;
+    margin-top: 20px;
+}
 
-    conn.row_factory = sqlite3.Row
+/* FLOATING OBJECTS */
 
-    return conn
+.object {
+    width: 260px;
+    min-height: 150px;
+    padding: 18px;
+    border-radius: 12px;
+    color: white;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
 
+.object:active {
+    cursor: grabbing;
+}
 
-# ==========================================
-# 5. DATABASE INITIALIZATION
-# ==========================================
+.object h3 {
+    margin-top: 0;
+    overflow-wrap: anywhere;
+}
 
-def create_database():
+.object p {
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
 
-    conn = get_db()
+/* CUSTOM FLOATING OBJECTS */
 
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS responses (
+.custom-object {
+    position: absolute;
+    z-index: 10;
+}
 
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+/* RESPONDENT CARDS */
 
-            full_name TEXT,
-            email TEXT,
+.respondent {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 150px;
+    border: 1px solid rgba(255,255,255,0.15);
+    cursor: grab;
+}
 
-            questionnaire_responses TEXT,
+.respondent small {
+    display: block;
+    margin-top: 12px;
+    opacity: 0.8;
+}
 
-            profile_photo TEXT,
-            license_photo TEXT,
-            vehicle_photo TEXT,
-            additional_photos TEXT,
+.respondent h3 {
+    overflow-wrap: anywhere;
+}
 
-            preferred_route TEXT
+.answer {
+    overflow-wrap: anywhere;
+}
 
-        )
-    """)
+/* OBJECT COLOURS */
 
-    # Retrieve existing database columns.
+.blue {
+    background: #2471a3;
+}
 
-    existing_columns = {
-        row["name"]
-        for row in conn.execute(
-            "PRAGMA table_info(responses)"
-        ).fetchall()
+.green {
+    background: #148f77;
+}
+
+.purple {
+    background: #76448a;
+}
+
+.orange {
+    background: #ca6f1e;
+}
+
+/* PHOTOGRAPHS */
+
+.photo-section {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.3);
+}
+
+.photo-section h4 {
+    margin: 5px 0 15px;
+}
+
+.photo-card {
+    margin-bottom: 18px;
+    background: rgba(0,0,0,0.15);
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.photo-card p {
+    font-weight: bold;
+    margin: 5px 0 10px;
+}
+
+.photo-card img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    background: #101827;
+    border-radius: 6px;
+    display: block;
+}
+
+.additional-photos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.additional-photos img {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 6px;
+    background: #101827;
+}
+
+.no-photo {
+    color: #d1d5db;
+    font-size: 13px;
+}
+
+/* BUTTONS */
+
+.edit-btn {
+    background: white;
+    color: #222;
+}
+
+.delete-btn {
+    background: #c0392b;
+    color: white;
+}
+
+.object button {
+    margin-top: 8px;
+    font-size: 12px;
+}
+
+/* EMPTY DATABASE */
+
+.empty-message {
+    background: #172438;
+    padding: 25px;
+    border-radius: 10px;
+    max-width: 450px;
+    color: #cbd5e1;
+}
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+
+    header {
+        padding: 12px;
     }
 
-    # Add missing columns to existing databases.
-
-    new_columns = {
-        "questionnaire_responses": "TEXT",
-        "profile_photo": "TEXT",
-        "license_photo": "TEXT",
-        "vehicle_photo": "TEXT",
-        "additional_photos": "TEXT",
-        "preferred_route": "TEXT"
+    header h2 {
+        font-size: 17px;
     }
 
-    for column, data_type in new_columns.items():
+    .respondents-grid {
+        grid-template-columns: 1fr;
+    }
 
-        if column not in existing_columns:
+    .object {
+        width: min(260px, calc(100vw - 40px));
+    }
 
-            conn.execute(
-                f"ALTER TABLE responses ADD COLUMN "
-                f"{column} {data_type}"
-            )
+}
 
-    conn.commit()
+</style>
+</head>
 
-    conn.close()
+<body>
 
+<header>
 
-# ==========================================
-# 6. PHOTOGRAPH HANDLING
-# ==========================================
+    <h2>Driver Information Dashboard</h2>
 
-def allowed_file(filename):
+</header>
 
-    return (
-        "." in filename
-        and filename.rsplit(".", 1)[1].lower()
-        in ALLOWED_EXTENSIONS
-    )
 
+<div class="workspace" id="workspace">
 
-def save_photo(file):
+    <!-- DATABASE STATISTICS -->
 
-    if not file or not file.filename:
-        return None
+    <div class="statistics">
 
-    if not allowed_file(file.filename):
-        return None
-
-    original_name = secure_filename(file.filename)
-
-    if not original_name or "." not in original_name:
-        return None
-
-    extension = original_name.rsplit(".", 1)[1].lower()
-
-    unique_name = f"{uuid.uuid4().hex}.{extension}"
-
-    file_path = os.path.join(
-        UPLOAD_FOLDER,
-        unique_name
-    )
-
-    file.save(file_path)
-
-    return f"uploads/{unique_name}"
-
-
-# ==========================================
-# 7. LOGIN PAGE
-# ==========================================
-
-@app.route("/", methods=["GET", "POST"])
-def login():
-
-    message = ""
-
-    if request.method == "POST":
-
-        username = request.form.get(
-            "username",
-            ""
-        )
-
-        password = request.form.get(
-            "password",
-            ""
-        )
-
-        if username == USERNAME and password == PASSWORD:
-
-            return redirect(url_for("home"))
-
-        message = "Invalid username or password."
-
-    return render_template(
-        "login.html",
-        message=message
-    )
-
-
-# ==========================================
-# 8. HOME PAGE
-# ==========================================
-
-@app.route("/home")
-def home():
-
-    return render_template("home.html")
-
-
-# ==========================================
-# 9. SETTINGS PAGE
-# ==========================================
-
-@app.route("/settings")
-@app.route("/settigs")
-def settings():
-
-    return render_template("settings.html")
-
-
-# ==========================================
-# 10. DRIVER DASHBOARD
-# ==========================================
-
-@app.route("/driver")
-@app.route("/driver.html")
-def driver():
-
-    conn = get_db()
-
-    try:
-
-        respondents = conn.execute("""
-            SELECT *
-            FROM responses
-            ORDER BY id DESC
-        """).fetchall()
-
-    finally:
-
-        conn.close()
-
-    # Convert database rows into dictionaries.
-
-    respondents = [
-        dict(row)
-        for row in respondents
-    ]
-
-    # Decode questionnaire responses.
-
-    for respondent in respondents:
-
-        try:
-
-            respondent["questionnaire_responses"] = json.loads(
-                respondent.get("questionnaire_responses") or "{}"
-            )
-
-            if not isinstance(
-                respondent["questionnaire_responses"],
-                dict
-            ):
-
-                respondent["questionnaire_responses"] = {}
-
-        except (json.JSONDecodeError, TypeError):
-
-            respondent["questionnaire_responses"] = {}
-
-        # Decode additional photographs.
-
-        try:
-
-            respondent["additional_photos"] = json.loads(
-                respondent.get("additional_photos") or "[]"
-            )
-
-            if not isinstance(
-                respondent["additional_photos"],
-                list
-            ):
-
-                respondent["additional_photos"] = []
-
-        except (json.JSONDecodeError, TypeError):
-
-            respondent["additional_photos"] = []
-
-    return render_template(
-        "driver.html",
-        respondents=respondents
-    )
-
-
-# ==========================================
-# 11. EXTERNAL QUESTIONNAIRE ENDPOINT
-# ==========================================
-
-@app.route("/receive", methods=["GET", "POST"])
-def receive():
-
-    # --------------------------------------
-    # GET REQUEST
-    # --------------------------------------
-
-    if request.method == "GET":
-
-        return """
-        <h2>QForm Endpoint Active</h2>
+        <h3>Respondent Statistics</h3>
 
         <p>
-            This endpoint is ready to receive
-            questionnaire submissions.
+            Total respondents:
+            <strong>{{ respondents|length }}</strong>
         </p>
+
+        <p>Source: Responses database</p>
+
+    </div>
+
+
+    <!-- RESPONDENT RECORDS -->
+
+    {% if respondents %}
+
+    <div class="respondents-grid">
+
+        {% for respondent in respondents %}
+
+        <div class="object blue respondent">
+
+            <small>DATABASE RESPONDENT</small>
+
+            <h3>Respondent #{{ respondent.id }}</h3>
+
+            <p>
+                <strong>Name:</strong>
+                {{ respondent.full_name }}
+            </p>
+
+            <p>
+                <strong>Email:</strong>
+                {{ respondent.email or "Not provided" }}
+            </p>
+
+
+            <!-- PHOTOGRAPHS -->
+
+            <div class="photo-section">
+
+                <h4>Driver Photographs</h4>
+
+                {% if respondent.profile_photo %}
+
+                <div class="photo-card">
+
+                    <p>Profile Photograph</p>
+
+                    <img
+                        src="{{ url_for('static', filename=respondent.profile_photo) }}"
+                        alt="Driver Profile"
+                        loading="lazy"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                    >
+
+                    <p class="no-photo" style="display:none;">
+                        Photograph unavailable.
+                    </p>
+
+                </div>
+
+                {% endif %}
+
+
+                {% if respondent.license_photo %}
+
+                <div class="photo-card">
+
+                    <p>Driving Licence Photograph</p>
+
+                    <img
+                        src="{{ url_for('static', filename=respondent.license_photo) }}"
+                        alt="Driving Licence"
+                        loading="lazy"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                    >
+
+                    <p class="no-photo" style="display:none;">
+                        Photograph unavailable.
+                    </p>
+
+                </div>
+
+                {% endif %}
+
+
+                {% if respondent.vehicle_photo %}
+
+                <div class="photo-card">
+
+                    <p>Vehicle Photograph</p>
+
+                    <img
+                        src="{{ url_for('static', filename=respondent.vehicle_photo) }}"
+                        alt="Driver Vehicle"
+                        loading="lazy"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                    >
+
+                    <p class="no-photo" style="display:none;">
+                        Photograph unavailable.
+                    </p>
+
+                </div>
+
+                {% endif %}
+
+
+                <!-- ADDITIONAL PHOTOGRAPHS -->
+
+                {% if respondent.additional_photos %}
+
+                <p><strong>Additional Photographs</strong></p>
+
+                <div class="additional-photos">
+
+                    {% for photo in respondent.additional_photos %}
+
+                    <img
+                        src="{{ url_for('static', filename=photo) }}"
+                        alt="Additional Driver Photograph"
+                        loading="lazy"
+                        onerror="this.style.display='none';"
+                    >
+
+                    {% endfor %}
+
+                </div>
+
+                {% endif %}
+
+
+                {% if not respondent.profile_photo
+                      and not respondent.license_photo
+                      and not respondent.vehicle_photo
+                      and not respondent.additional_photos %}
+
+                    <p class="no-photo">
+                        No photographs submitted.
+                    </p>
+
+                {% endif %}
+
+            </div>
+
+            <small>Submitted respondent information</small>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-message">
+
+        <h3>No respondents yet</h3>
 
         <p>
-            Submit your questionnaire using POST.
+            When someone submits a response,
+            their information will appear here.
         </p>
-        """
 
-    # --------------------------------------
-    # RESPONDENT DETAILS
-    # --------------------------------------
+    </div>
 
-    full_name = request.form.get(
-        "full_name",
-        ""
-    ).strip()
+    {% endif %}
 
-    email = request.form.get(
-        "email",
-        ""
-    ).strip()
+</div>
 
-    if not full_name or not email:
 
-        return jsonify({
-            "success": False,
-            "message": "Full name and email are required."
-        }), 400
+<script>
 
-    # --------------------------------------
-    # QUESTIONNAIRE ANSWERS
-    # --------------------------------------
+/* WORKSPACE */
 
-    questionnaire_responses = {}
+const workspace = document.getElementById("workspace");
 
-    excluded_fields = {
-        "full_name",
-        "email",
-        "route"
+let draggedObject = null;
+let offsetX = 0;
+let offsetY = 0;
+
+
+/* ADD CUSTOM OBJECT */
+
+function addObject() {
+
+    const object = document.createElement("div");
+
+    object.className = "object orange custom-object";
+
+    object.style.left = "25px";
+    object.style.top = (workspace.scrollTop + 150) + "px";
+
+    object.innerHTML = `
+        <h3>New Object</h3>
+
+        <p>Enter your information here.</p>
+
+        <button class="edit-btn" onclick="editObject(this)">
+            Edit
+        </button>
+
+        <button class="delete-btn" onclick="deleteObject(this)">
+            Delete
+        </button>
+    `;
+
+    workspace.appendChild(object);
+
+}
+
+
+/* EDIT CUSTOM OBJECT */
+
+function editObject(button) {
+
+    const object = button.closest(".custom-object");
+
+    if (!object) return;
+
+    const title = prompt(
+        "Enter object title:",
+        object.querySelector("h3").textContent
+    );
+
+    if (title === null) return;
+
+    const information = prompt(
+        "Enter object information:",
+        Array.from(object.querySelectorAll("p"))
+            .map(p => p.textContent)
+            .join("\n")
+    );
+
+    if (information === null) return;
+
+    object.querySelector("h3").textContent = title;
+
+    object.querySelectorAll("p").forEach(p => p.remove());
+
+    information.split("\n").forEach(line => {
+
+        const paragraph = document.createElement("p");
+
+        paragraph.textContent = line;
+
+        object.insertBefore(
+            paragraph,
+            object.querySelector("button")
+        );
+
+    });
+
+}
+
+
+/* DELETE CUSTOM OBJECT */
+
+function deleteObject(button) {
+
+    const object = button.closest(".custom-object");
+
+    if (!object) return;
+
+    if (confirm("Delete this custom object?")) {
+        object.remove();
     }
 
-    for field in request.form:
-
-        if field not in excluded_fields:
-
-            questionnaire_responses[field] = (
-                request.form.getlist(field)
-            )
-
-    # --------------------------------------
-    # PREFERRED ROUTE
-    # --------------------------------------
-
-    preferred_route = request.form.get(
-        "route",
-        ""
-    ).strip()
-
-    # --------------------------------------
-    # PHOTOGRAPH UPLOADS
-    # --------------------------------------
-
-    profile_photo = save_photo(
-        request.files.get("profile_photo")
-    )
-
-    license_photo = save_photo(
-        request.files.get("license_photo")
-    )
-
-    vehicle_photo = save_photo(
-        request.files.get("vehicle_photo")
-    )
-
-    additional_files = request.files.getlist(
-        "additional_photos"
-    )
-
-    additional_photos = []
-
-    for photo in additional_files:
-
-        saved_photo = save_photo(photo)
-
-        if saved_photo:
-
-            additional_photos.append(saved_photo)
-
-    # --------------------------------------
-    # SAVE RESPONDENT INFORMATION
-    # --------------------------------------
-
-    conn = get_db()
-
-    try:
-
-        conn.execute("""
-            INSERT INTO responses (
-
-                full_name,
-                email,
-
-                questionnaire_responses,
-
-                preferred_route,
-
-                profile_photo,
-                license_photo,
-                vehicle_photo,
-                additional_photos
-
-            )
-
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-
-        """, (
-
-            full_name,
-            email,
-
-            json.dumps(questionnaire_responses),
-
-            preferred_route,
-
-            profile_photo,
-            license_photo,
-            vehicle_photo,
-            json.dumps(additional_photos)
-
-        ))
-
-        conn.commit()
-
-    except sqlite3.Error:
-
-        conn.rollback()
-
-        return jsonify({
-            "success": False,
-            "message": "Database error. Submission could not be saved."
-        }), 500
-
-    finally:
-
-        conn.close()
-
-    # --------------------------------------
-    # RETURN SUCCESS
-    # --------------------------------------
-
-    return jsonify({
-        "success": True,
-        "message": "Your form has been submitted successfully!"
-    }), 200
+}
 
 
-# ==========================================
-# 12. ERROR HANDLING
-# ==========================================
+/* DRAG OBJECTS */
 
-@app.errorhandler(413)
-def file_too_large(error):
+workspace.addEventListener("pointerdown", function(event) {
 
-    return (
-        "Upload too large. Maximum request size is 16 MB.",
-        413
-    )
+    const object = event.target.closest(".object");
+
+    if (!object) return;
+
+    if (event.target.closest("button")) return;
+
+    draggedObject = object;
+
+    const rect = object.getBoundingClientRect();
+    const workspaceRect = workspace.getBoundingClientRect();
+
+    // Convert grid cards into floating objects when dragged.
+
+    if (object.classList.contains("respondent")) {
+
+        object.style.position = "absolute";
+
+        object.style.left =
+            (rect.left - workspaceRect.left + workspace.scrollLeft) + "px";
+
+        object.style.top =
+            (rect.top - workspaceRect.top + workspace.scrollTop) + "px";
+
+        object.style.width = "260px";
+
+    }
+
+    offsetX = event.clientX - rect.left;
+    offsetY = event.clientY - rect.top;
+
+    object.setPointerCapture(event.pointerId);
+
+});
 
 
-# ==========================================
-# 13. START APPLICATION
-# ==========================================
+workspace.addEventListener("pointermove", function(event) {
 
-create_database()
+    if (!draggedObject) return;
+
+    const rect = workspace.getBoundingClientRect();
+
+    const left =
+        event.clientX - rect.left +
+        workspace.scrollLeft - offsetX;
+
+    const top =
+        event.clientY - rect.top +
+        workspace.scrollTop - offsetY;
+
+    draggedObject.style.left = Math.max(0, left) + "px";
+    draggedObject.style.top = Math.max(0, top) + "px";
+
+});
 
 
-if __name__ == "__main__":
+workspace.addEventListener("pointerup", function() {
+    draggedObject = null;
+});
 
-    app.run(
-        host="0.0.0.0",
-        port=int(os.environ.get("PORT", 5000)),
-        debug=False
-    )
+workspace.addEventListener("pointercancel", function() {
+    draggedObject = null;
+});
+
+</script>
+
+</body>
+</html>

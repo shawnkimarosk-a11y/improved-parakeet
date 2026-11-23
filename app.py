@@ -1,4 +1,5 @@
 
+
 import os
 import json
 import sqlite3
@@ -25,7 +26,10 @@ app = Flask(__name__)
 # ==========================================
 
 DATABASE = os.path.abspath(
-    os.environ.get("DATABASE_PATH", "responses.db")
+    os.environ.get(
+        "DATABASE_PATH",
+        "responses.db"
+    )
 )
 
 UPLOAD_FOLDER = os.path.join(
@@ -46,9 +50,6 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # 2. CORS CONFIGURATION
 # ==========================================
 
-# Allows external questionnaires to submit
-# information to the Flask application.
-
 CORS(app, resources={
     r"/receive": {"origins": "*"}
 })
@@ -58,8 +59,15 @@ CORS(app, resources={
 # 3. LOGIN DETAILS
 # ==========================================
 
-USERNAME = os.environ.get("APP_USERNAME", "admin")
-PASSWORD = os.environ.get("APP_PASSWORD", "1234")
+USERNAME = os.environ.get(
+    "APP_USERNAME",
+    "admin"
+)
+
+PASSWORD = os.environ.get(
+    "APP_PASSWORD",
+    "1234"
+)
 
 
 # ==========================================
@@ -91,9 +99,7 @@ def create_database():
             full_name TEXT,
             email TEXT,
 
-            driving_styles TEXT,
-            driving_preferences TEXT,
-            passenger_preferences TEXT,
+            questionnaire_responses TEXT,
 
             profile_photo TEXT,
             license_photo TEXT,
@@ -105,7 +111,7 @@ def create_database():
         )
     """)
 
-    # Check existing database columns.
+    # Retrieve existing database columns.
 
     existing_columns = {
         row["name"]
@@ -114,9 +120,10 @@ def create_database():
         ).fetchall()
     }
 
-    # Add missing columns to older databases.
+    # Add missing columns to existing databases.
 
     new_columns = {
+        "questionnaire_responses": "TEXT",
         "profile_photo": "TEXT",
         "license_photo": "TEXT",
         "vehicle_photo": "TEXT",
@@ -129,10 +136,12 @@ def create_database():
         if column not in existing_columns:
 
             conn.execute(
-                f"ALTER TABLE responses ADD COLUMN {column} {data_type}"
+                f"ALTER TABLE responses ADD COLUMN "
+                f"{column} {data_type}"
             )
 
     conn.commit()
+
     conn.close()
 
 
@@ -187,8 +196,15 @@ def login():
 
     if request.method == "POST":
 
-        username = request.form.get("username", "")
-        password = request.form.get("password", "")
+        username = request.form.get(
+            "username",
+            ""
+        )
+
+        password = request.form.get(
+            "password",
+            ""
+        )
 
         if username == USERNAME and password == PASSWORD:
 
@@ -252,10 +268,28 @@ def driver():
         for row in respondents
     ]
 
-    # Convert additional photographs from JSON
-    # strings into Python lists.
+    # Decode questionnaire responses.
 
     for respondent in respondents:
+
+        try:
+
+            respondent["questionnaire_responses"] = json.loads(
+                respondent.get("questionnaire_responses") or "{}"
+            )
+
+            if not isinstance(
+                respondent["questionnaire_responses"],
+                dict
+            ):
+
+                respondent["questionnaire_responses"] = {}
+
+        except (json.JSONDecodeError, TypeError):
+
+            respondent["questionnaire_responses"] = {}
+
+        # Decode additional photographs.
 
         try:
 
@@ -264,8 +298,10 @@ def driver():
             )
 
             if not isinstance(
-                respondent["additional_photos"], list
+                respondent["additional_photos"],
+                list
             ):
+
                 respondent["additional_photos"] = []
 
         except (json.JSONDecodeError, TypeError):
@@ -285,14 +321,23 @@ def driver():
 @app.route("/receive", methods=["GET", "POST"])
 def receive():
 
-    # Allow direct browser testing.
+    # --------------------------------------
+    # GET REQUEST
+    # --------------------------------------
 
     if request.method == "GET":
 
         return """
         <h2>QForm Endpoint Active</h2>
-        <p>This endpoint is ready to receive questionnaire submissions.</p>
-        <p>Submit your questionnaire using POST.</p>
+
+        <p>
+            This endpoint is ready to receive
+            questionnaire submissions.
+        </p>
+
+        <p>
+            Submit your questionnaire using POST.
+        </p>
         """
 
     # --------------------------------------
@@ -300,11 +345,13 @@ def receive():
     # --------------------------------------
 
     full_name = request.form.get(
-        "full_name", ""
+        "full_name",
+        ""
     ).strip()
 
     email = request.form.get(
-        "email", ""
+        "email",
+        ""
     ).strip()
 
     if not full_name or not email:
@@ -318,24 +365,29 @@ def receive():
     # QUESTIONNAIRE ANSWERS
     # --------------------------------------
 
-    driving_styles = request.form.getlist("dstyles")
+    questionnaire_responses = {}
 
-    driving_preferences = request.form.getlist("loves")
+    excluded_fields = {
+        "full_name",
+        "email",
+        "route"
+    }
 
-    # Accept the external questionnaire field name.
+    for field in request.form:
 
-    passenger_preferences = request.form.getlist("kind")
+        if field not in excluded_fields:
 
-    # Also support the original field name.
+            questionnaire_responses[field] = (
+                request.form.getlist(field)
+            )
 
-    if not passenger_preferences:
-
-        passenger_preferences = request.form.getlist(
-            "passengers"
-        )
+    # --------------------------------------
+    # PREFERRED ROUTE
+    # --------------------------------------
 
     preferred_route = request.form.get(
-        "route", ""
+        "route",
+        ""
     ).strip()
 
     # --------------------------------------
@@ -382,9 +434,7 @@ def receive():
                 full_name,
                 email,
 
-                driving_styles,
-                driving_preferences,
-                passenger_preferences,
+                questionnaire_responses,
 
                 preferred_route,
 
@@ -395,16 +445,14 @@ def receive():
 
             )
 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 
         """, (
 
             full_name,
             email,
 
-            ", ".join(driving_styles),
-            ", ".join(driving_preferences),
-            ", ".join(passenger_preferences),
+            json.dumps(questionnaire_responses),
 
             preferred_route,
 
@@ -431,7 +479,7 @@ def receive():
         conn.close()
 
     # --------------------------------------
-    # RETURN SUCCESS WITHOUT REDIRECTING
+    # RETURN SUCCESS
     # --------------------------------------
 
     return jsonify({
@@ -467,4 +515,3 @@ if __name__ == "__main__":
         port=int(os.environ.get("PORT", 5000)),
         debug=False
     )
-

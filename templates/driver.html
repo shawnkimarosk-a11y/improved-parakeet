@@ -327,14 +327,7 @@ button:hover {
 
                 <h4>Questionnaire Responses</h4>
 
-                {% set display_labels = {
-                    'dstyles': 'Driving Styles',
-                    'prefference': 'Driving Preferences',
-                    'preference': 'Driving Preferences',
-                    'loves': 'Driving Preferences',
-                    'passengers': 'Passenger Preferences',
-                    'kind': 'Passenger Preferences'
-                } %}
+             
 
                 {% for question, answers in respondent.questionnaire_responses.items() %}
 

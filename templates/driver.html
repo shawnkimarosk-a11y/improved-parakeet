@@ -277,7 +277,6 @@ button:hover {
 
     <h2>Driver Information Dashboard</h2>
 
-
 </header>
 
 
@@ -323,23 +322,46 @@ button:hover {
                 {{ respondent.email or "Not provided" }}
             </p>
 
-            <p><strong>Driving styles:</strong></p>
 
-            <p class="answer">
-                {{ respondent.driving_styles or "Not provided" }}
-            </p>
+            <!-- QUESTIONNAIRE RESPONSES -->
 
-            <p><strong>Driving preferences:</strong></p>
+            {% if respondent.questionnaire_responses %}
 
-            <p class="answer">
-                {{ respondent.driving_preferences or "Not provided" }}
-            </p>
+            <div class="questionnaire-section">
 
-            <p><strong>Passenger preferences:</strong></p>
+                <h4>Questionnaire Responses</h4>
 
-            <p class="answer">
-                {{ respondent.passenger_preferences or "Not provided" }}
-            </p>
+                {% for question, answers in respondent.questionnaire_responses.items() %}
+
+                    <p>
+                        <strong>{{ question }}:</strong>
+                    </p>
+
+                    <p class="answer">
+
+                        {% if answers is string %}
+
+                            {{ answers }}
+
+                        {% else %}
+
+                            {{ answers | join(', ') }}
+
+                        {% endif %}
+
+                    </p>
+
+                {% endfor %}
+
+            </div>
+
+            {% else %}
+
+                <p class="answer">
+                    No questionnaire responses submitted.
+                </p>
+
+            {% endif %}
 
 
             <!-- PHOTOGRAPHS -->
@@ -640,6 +662,7 @@ workspace.addEventListener("pointerup", function() {
     draggedObject = null;
 });
 
+
 workspace.addEventListener("pointercancel", function() {
     draggedObject = null;
 });
@@ -648,4 +671,3 @@ workspace.addEventListener("pointercancel", function() {
 
 </body>
 </html>
-

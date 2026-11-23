@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -274,11 +275,8 @@ button:hover {
 <body>
 
 <header>
-
     <h2>Driver Information Dashboard</h2>
-
 </header>
-
 
 <div class="workspace" id="workspace">
 
@@ -296,7 +294,6 @@ button:hover {
         <p>Source: Responses database</p>
 
     </div>
-
 
     <!-- RESPONDENT RECORDS -->
 
@@ -322,7 +319,6 @@ button:hover {
                 {{ respondent.email or "Not provided" }}
             </p>
 
-
             <!-- QUESTIONNAIRE RESPONSES -->
 
             {% if respondent.questionnaire_responses %}
@@ -331,10 +327,24 @@ button:hover {
 
                 <h4>Questionnaire Responses</h4>
 
+                {% set display_labels = {
+                    'dstyles': 'Driving Styles',
+                    'prefference': 'Driving Preferences',
+                    'preference': 'Driving Preferences',
+                    'loves': 'Driving Preferences',
+                    'passengers': 'Passenger Preferences',
+                    'kind': 'Passenger Preferences'
+                } %}
+
                 {% for question, answers in respondent.questionnaire_responses.items() %}
 
                     <p>
-                        <strong>{{ question }}:</strong>
+                        <strong>
+                            {{ display_labels.get(
+                                question,
+                                question | replace('_', ' ') | title
+                            ) }}:
+                        </strong>
                     </p>
 
                     <p class="answer">
@@ -363,7 +373,6 @@ button:hover {
 
             {% endif %}
 
-
             <!-- PHOTOGRAPHS -->
 
             <div class="photo-section">
@@ -391,7 +400,6 @@ button:hover {
 
                 {% endif %}
 
-
                 {% if respondent.license_photo %}
 
                 <div class="photo-card">
@@ -413,7 +421,6 @@ button:hover {
 
                 {% endif %}
 
-
                 {% if respondent.vehicle_photo %}
 
                 <div class="photo-card">
@@ -434,7 +441,6 @@ button:hover {
                 </div>
 
                 {% endif %}
-
 
                 <!-- ADDITIONAL PHOTOGRAPHS -->
 
@@ -458,7 +464,6 @@ button:hover {
                 </div>
 
                 {% endif %}
-
 
                 {% if not respondent.profile_photo
                       and not respondent.license_photo
@@ -497,7 +502,6 @@ button:hover {
     {% endif %}
 
 </div>
-
 
 <script>
 
@@ -661,7 +665,6 @@ workspace.addEventListener("pointermove", function(event) {
 workspace.addEventListener("pointerup", function() {
     draggedObject = null;
 });
-
 
 workspace.addEventListener("pointercancel", function() {
     draggedObject = null;
